@@ -11,9 +11,11 @@
 
 When you are started as a coordinator ("work on <project>: <goal>"):
 
-1. Take one goal. Split it into parts that can run alone; write the checklist to `docs/plans/<date>-<goal>.md`.
-2. Route each part: Claude Code via Gearbox tiers for design, review and hard work; an OpenCode Go worker (default `bulk`, DeepSeek Flash, until the bake-off) for routine coding; local LM Studio for local-only tasks. Never bulk content in OpenCode Go: use `content-batch`.
-3. Each worker gets its own Orca worktree (`orca worktree create`), dispatched as an orchestration Task. Wait on `worker_done`, then review the diff.
-4. Gates stop the work and call `bin/gate`: merge, deploy, spend, sending to people, cap. The user merges all PRs.
-5. Send a status line to Telegram (`bin/notify`) at start, at each gate and when done.
+1. Take one goal. Split it into parts that can run alone; write the checklist to `docs/plans/<date>-<goal>.md`. Create an Orca run: `orca orchestration run-create --objective "<goal>"`. With 2+ separable parts, make 2+ tasks.
+2. Start every worker with `orca orchestration worker-start --spec <task> --worktree new-child --agent <claude|opencode> --model <id>`. Routine parts: `--agent opencode` (`--model opencode-go/deepseek-v4.1-flash`, the `bulk` model). Design, test and hard parts: `--agent claude`. Never do a worker part in your own worktree. Never bulk content in OpenCode: use `content-batch`.
+3. Wait with `orca orchestration check --wait`. Review each diff, then merge the worker branch into yours.
+4. Every gate (merge, deploy, spend, sending to people, cap) has two parts. The decision: `orca orchestration gate-create --task <id> --question "…" --options '[...]'`. The alert: `bin/gate <kind> "<text> — answer in Orca" --link <url>`. Then wait for gate-resolve; the user answers in Orca (desktop or mobile), never in Telegram.
+5. For code: push your branch, `gh pr create`, then the merge gate with `--link <pr url>`. Never merge: the user merges all PRs.
+6. Send a status line to Telegram (`bin/notify`) at start and when done.
+7. Never commit `.claude/gearbox-log.jsonl`.
 <!-- devsetup:end -->
